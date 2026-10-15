@@ -6,6 +6,7 @@ import re
 from clean_data import*
 import math
 from spacy.lang.en import English
+from spacy.training import Example
 from test_model import*
 
 data = clean_data()
@@ -26,8 +27,9 @@ nlp = English()
 
 def train_model():
     if 'ner' not in nlp.pipe_names:
-        ner = nlp.create_pipe('ner')
-        nlp.add_pipe(ner, last = True)
+        ner = nlp.add_pipe('ner', last = True)
+    else:
+        ner = nlp.get_pipe('ner')
 
     # add labels
     for _, annotation in train_data:
@@ -36,17 +38,17 @@ def train_model():
 
     # get names of other pipes to disable them during training
     other_pipes = [pipe for pipe in nlp.pipe_names if pipe != 'ner']
-    with nlp.disable_pipes(*other_pipes):  # only train NER
-        optimizer = nlp.begin_training()
+    with nlp.select_pipes(disable=other_pipes):  # only train NER
+        optimizer = nlp.initialize()
         for itn in range(10):
             print("Starting iteration " + str(itn))
             random.shuffle(train_data)
             losses = {}
             for text, annotations in train_data:
                 try:
+                    example = Example.from_dict(nlp.make_doc(text), annotations)
                     nlp.update(
-                        [text],  # batch of texts
-                        [annotations],  # batch of annotations
+                        [example],  # batch of examples
                         drop=0.2,  # dropout - make it harder to memorise data
                         sgd=optimizer,  # callable to update weights
                         losses=losses)
