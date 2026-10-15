@@ -1,9 +1,10 @@
-import sys, fitz
+import sys
+import pymupdf
 import docx2txt
 
 def read_pdf(file_path):
         file = open(file_path, "rb").read()
-        doc = fitz.open("pdf", file)
+        doc = pymupdf.open("pdf", file)
 
         text = ""
         for page in doc:
