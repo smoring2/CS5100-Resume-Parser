@@ -3,7 +3,7 @@ import random
 import os
 import json
 import re
-from spacy.gold import GoldParse
+from spacy.training import offsets_to_biluo_tags
 from itertools import groupby
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
@@ -27,8 +27,7 @@ def doc_to_bilou(nlp, text):
                 entity
             ))
 
-    gold = GoldParse(nlp(text), entities = entities)
-    pred_ents = gold.ner
+    pred_ents = offsets_to_biluo_tags(nlp(text), entities)
     
     return pred_ents
 
@@ -55,8 +54,7 @@ def test_model(nlp, test_data):
     y_pred = []
 
     for text, annots in test_data:
-        gold = GoldParse(nlp.make_doc(text), entities = annots.get("entities"))
-        ents = gold.ner
+        ents = offsets_to_biluo_tags(nlp.make_doc(text), annots.get("entities"))
         pred_ents = doc_to_bilou(nlp, text)
         
         y_test.append(ents)
