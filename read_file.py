@@ -13,7 +13,7 @@ def read_pdf(file_path):
         return tx
 
 def read_txt(file_path):
-        file = open(file_path).read()
+        file = open(file_path, encoding="utf-8", errors="replace").read()
         # file = open(app.config['UPLOAD_FOLDER'] + filename).read().decode('utf-8')
         tx = ''
         for i in file:
@@ -25,9 +25,3 @@ def read_docx(file_path):
 
     text = "".join([s for s in file.splitlines(True) if s.strip("\r\n")])
     return text
-
-
-
-
-
-
