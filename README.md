@@ -23,12 +23,25 @@ The project mainly uses Python to deal with resume parsing logic and takes Flask
 
 |  Agent Type   |                      Performance Measure                      |    Environment     |   Actuators    |                   Sensors                   |
 |:-------------:|:-------------------------------------------------------------:|:------------------:|:--------------:|:-------------------------------------------:|
-| Resume Parser | Parse resume’s contents into different categories accurately. | Internet, Computer | Screen display | Web pages, Resumes uploaded by users, Mouse |
+| Resume Parser | Parse resume's contents into different categories accurately. | Internet, Computer | Screen display | Web pages, Resumes uploaded by users, Mouse |
 
 ## Run In Terminal
+
+For production use, run with a production WSGI server:
 ```
-  export FLASK_ENV=development
-  export FLASK_APP=app
-  flask run
+  pip install gunicorn
+  gunicorn --bind 127.0.0.1:5000 app:app
 ```
 
+For local development only (not for production or public-facing deployments):
+```
+  python app.py
+```
+
+To enable debug mode for local development, set the environment variable:
+```
+  export FLASK_DEBUG=true
+  python app.py
+```
+
+**Warning:** Do not enable debug mode in production or on a publicly accessible host.
