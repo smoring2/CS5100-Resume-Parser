@@ -23,12 +23,83 @@ The project mainly uses Python to deal with resume parsing logic and takes Flask
 
 |  Agent Type   |                      Performance Measure                      |    Environment     |   Actuators    |                   Sensors                   |
 |:-------------:|:-------------------------------------------------------------:|:------------------:|:--------------:|:-------------------------------------------:|
-| Resume Parser | Parse resume’s contents into different categories accurately. | Internet, Computer | Screen display | Web pages, Resumes uploaded by users, Mouse |
+| Resume Parser | Parse resume's contents into different categories accurately. | Internet, Computer | Screen display | Web pages, Resumes uploaded by users, Mouse |
+
+## Authentication
+
+The application supports API-key authentication to protect all routes.
+
+### Enabling authentication (recommended for any networked deployment)
+
+Set the `API_KEY` environment variable before starting the server:
+
+```bash
+export API_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+```
+
+Clients authenticate by including the key as a Bearer token:
+
+```
+Authorization: Bearer <your-api-key>
+```
+
+Or as a query parameter (less preferred):
+
+```
+GET /?api_key=<your-api-key>
+```
+
+Unauthenticated requests receive a `401 Unauthorized` response when `API_KEY` is set.
+
+### Unauthenticated mode (development only)
+
+When `API_KEY` is **not** set the application runs without authentication.
+This mode is intended **only for local development** on a trusted network.
+
+**Justification:** during local development the server binds to `127.0.0.1`
+by default and is not reachable from external networks. Uploaded files are
+written to a temporary directory and deleted immediately after parsing, so
+no personal data accumulates on disk.
+
+The following compensating guardrails are active regardless of
+authentication mode:
+
+| Guardrail | Detail |
+|---|---|
+| **Upload size limit** | `MAX_CONTENT_LENGTH` is set to 16 MB. Requests exceeding this are rejected. |
+| **File-type allowlist** | Only `.pdf`, `.txt`, and `.docx` extensions are accepted. |
+| **Temporary storage with cleanup** | Uploaded files are saved to a temporary directory and deleted immediately after parsing completes, even if an error occurs. |
+| **Request logging** | Every request is logged with remote address, method, path, status code, and content length for audit purposes. |
+| **No debug mode by default** | The debug console/traceback is disabled unless `FLASK_DEBUG=1` is explicitly set. |
+| **Localhost binding** | The development server binds to `127.0.0.1` by default. Set `HOST=0.0.0.0` only behind an authenticating reverse proxy. |
+| **Secret key** | A `SECRET_KEY` is always set (from `APP_SECRET_KEY` env var or a random fallback) so Flask sessions are cryptographically signed. |
+
+> **For any Internet-facing deployment** you must set `API_KEY`, use a
+> production WSGI server (e.g. gunicorn), and place the application behind
+> an authenticating reverse proxy with TLS termination.
 
 ## Run In Terminal
+
+### Local development (unauthenticated, localhost only)
 ```
-  export FLASK_ENV=development
-  export FLASK_APP=app
-  flask run
+export FLASK_APP=app
+python app.py
 ```
 
+### With authentication enabled
+```
+export FLASK_APP=app
+export APP_SECRET_KEY="<a-strong-persistent-secret>"
+export API_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+python app.py
+```
+
+### Environment variables reference
+
+| Variable | Required | Description |
+|---|---|---|
+| `APP_SECRET_KEY` | Recommended | Flask secret key for session signing. A random key is generated if unset. |
+| `API_KEY` | Recommended | When set, all routes require this token via `Authorization: Bearer` header or `api_key` query parameter. |
+| `HOST` | No | Bind address. Defaults to `127.0.0.1`. |
+| `PORT` | No | Bind port. Defaults to `5000`. |
+| `FLASK_DEBUG` | No | Set to `1` to enable debug mode. Defaults to off. |
